@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { ToastContainer, ToastMessage } from './components/Toast';
@@ -14,6 +14,7 @@ import { Home } from './pages/public/Home';
 import { Browse } from './pages/public/Browse';
 import { NovelDetails } from './pages/public/NovelDetails';
 import { ChapterRead } from './pages/public/ChapterRead';
+import { Diagnostics } from './pages/public/Diagnostics';
 import { Auth } from './pages/Auth';
 import { Profile } from './pages/public/Profile';
 
@@ -109,6 +110,7 @@ export default function App() {
               <Route path="/novels" element={<Browse addToast={addToast} />} />
               <Route path="/novels/:slug" element={<NovelDetails addToast={addToast} />} />
               <Route path="/read/:chapterId" element={<ChapterRead addToast={addToast} />} />
+              <Route path="/diagnostics" element={<Diagnostics />} />
               
               {/* --- VISITOR AUTH HUBS --- */}
               <Route path="/login" element={<Auth mode="login" addToast={addToast} />} />
@@ -181,9 +183,14 @@ export default function App() {
             <div className="max-w-7xl mx-auto px-4 space-y-2">
               <p className="font-sans text-neutral-300 font-bold">Novel Threads — Elegant Light Novel Hub</p>
               <p>Designed with pristine eye-care reader formats. © {new Date().getFullYear()} All Rights Reserved.</p>
-              <p className="border border-neutral-800/80 rounded inline-block px-2.5 py-1 mt-2 text-[10px] text-neutral-500">
-                Authorized Governance Console
-              </p>
+              <div className="flex justify-center items-center gap-4 flex-wrap">
+                <p className="border border-neutral-800/80 rounded inline-block px-2.5 py-1 text-[10px] text-neutral-500">
+                  Authorized Governance Console
+                </p>
+                <Link to="/diagnostics" className="text-orange-400 hover:text-orange-300 font-sans font-semibold underline text-[11px] hover:no-underline transition-all">
+                  ⚙️ System Diagnostics Suite
+                </Link>
+              </div>
             </div>
           </footer>
 

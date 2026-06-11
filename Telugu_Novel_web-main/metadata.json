@@ -1,6 +1,0 @@
-{
-  "name": "Novel Threads Platform",
-  "description": "An interactive, elegant light novel platform supporting chapter navigation, bookmarks, dark-themed reading context, real-time metrics, admin control panels, and MongoDB storage fallback.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
