@@ -1,0 +1,47 @@
+[
+  {
+    "_id": "n_romantic_thread",
+    "title": "Bond of Love",
+    "slug": "bond-of-love",
+    "author": "Satyanarayana Raju",
+    "category": "Romance",
+    "shortSummary": "A beautiful love story set in a tranquil countryside backdrop. This tale weaves a tapestry of a flowing river, lush green fields, and heartwarming human bonds.",
+    "description": "This novel beautifully renders the innocence, pure love, and deep familial ties of rural life. Satyanarayana Raju masterfully presents the gentle emotional journey of Akhil, who leaves busy city life to return to his ancestral village, and falls for a local girl named Sravani. His struggle to win her heart and bridge their worlds makes for an evocative and emotional read. Each chapter carries you through a touching voyage of feelings.",
+    "coverImageUrl": "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=600",
+    "coverImagePublicId": "local_prema_bandham",
+    "tags": [
+      "Love",
+      "Bond",
+      "Countryside",
+      "Family",
+      "Romance"
+    ],
+    "novelStatus": "COMPLETED",
+    "publishStatus": "PUBLISHED",
+    "totalViews": 384,
+    "createdAt": "2026-06-10T12:00:00.000Z",
+    "updatedAt": "2026-06-11T02:00:00.000Z"
+  },
+  {
+    "_id": "n_thriller_street",
+    "title": "The Dark Lane",
+    "slug": "the-dark-lane",
+    "author": "Ravi Varma",
+    "category": "Thriller",
+    "shortSummary": "A suspenseful mystery revolving around an ancient mansion in a small village. What is the real story behind this street that villagers dread to enter after dark?",
+    "description": "This high-stakes suspense thriller revolves around a 200-year-old ruined fort located in a remote village near Vijayawada. What lies behind the strange noises heard from the street on every full moon night? Detective Karthik steps in to unravel the conspiracy in this fast-paced and breathtaking narrative. A gripping story that will keep you on the edge of your seat.",
+    "coverImageUrl": "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=600",
+    "coverImagePublicId": "local_cheekati_veedhi",
+    "tags": [
+      "Suspense",
+      "Mystery",
+      "Detective",
+      "Thriller"
+    ],
+    "novelStatus": "ONGOING",
+    "publishStatus": "PUBLISHED",
+    "totalViews": 242,
+    "createdAt": "2026-06-10T14:00:00.000Z",
+    "updatedAt": "2026-06-11T03:00:00.000Z"
+  }
+]
