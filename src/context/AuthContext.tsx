@@ -29,7 +29,14 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('novel_threads_token'));
+  const [token, setToken] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('novel_threads_token');
+    } catch (err) {
+      console.warn('localStorage read is blocked or not permitted in this sandbox/iframe environment:', err);
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
 
   const isAdmin = user?.role === UserRole.ADMIN;
@@ -67,7 +74,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [token]);
 
   const handleClearAuth = () => {
-    localStorage.removeItem('novel_threads_token');
+    try {
+      localStorage.removeItem('novel_threads_token');
+    } catch (err) {
+      console.warn('localStorage clear is blocked/denied in this environment:', err);
+    }
     setToken(null);
     setUser(null);
   };
@@ -82,7 +93,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await res.json();
 
       if (data.success && data.token) {
-        localStorage.setItem('novel_threads_token', data.token);
+        try {
+          localStorage.setItem('novel_threads_token', data.token);
+        } catch (err) {
+          console.warn('localStorage write is blocked/denied in this environment. Falling back to in-memory auth state.', err);
+        }
         setToken(data.token);
         setUser(data.user);
         return { success: true, message: data.message || 'Login successful' };
@@ -105,7 +120,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await res.json();
 
       if (data.success && data.token) {
-        localStorage.setItem('novel_threads_token', data.token);
+        try {
+          localStorage.setItem('novel_threads_token', data.token);
+        } catch (err) {
+          console.warn('localStorage write is blocked/denied in this environment. Falling back to in-memory auth state.', err);
+        }
         setToken(data.token);
         setUser(data.user);
         return { success: true, message: data.message || 'Registered successfully' };

@@ -131,9 +131,9 @@ async function startServer() {
   app.get('/api/chapters/:chapterId/comments', commentsController.getChapterComments);
 
   // --- AUTHENTICATION ROUTES ---
-  // Apply registration and login rate limiters (Max 10 per minute)
-  app.post('/api/auth/register', rateLimit(10, 60000), authController.register);
-  app.post('/api/auth/login', rateLimit(10, 60000), authController.login);
+  // Apply generous registration and login rate limiters (Max 250 per minute) to support testing and shared-IP ingress proxy environments
+  app.post('/api/auth/register', rateLimit(250, 60000), authController.register);
+  app.post('/api/auth/login', rateLimit(250, 60000), authController.login);
   app.get('/api/auth/me', protect, authController.me);
 
   // --- PROTECTED READER ROUTES ---
