@@ -84,29 +84,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = async (email: string, password: string) => {
+    console.log(`[AuthContext.login] Initiating custom login for: ${email} (password length: ${password.length})`);
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      const data = await res.json();
+
+      console.log(`[AuthContext.login] Received HTTP Response Status: ${res.status} ${res.statusText}`);
+      console.log(`[AuthContext.login] Response OK: ${res.ok}`);
+
+      // Inspect response headers
+      const headersObj: Record<string, string> = {};
+      res.headers.forEach((val, key) => {
+        headersObj[key] = val;
+      });
+      console.log('[AuthContext.login] Response Headers:', headersObj);
+
+      let data: any;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
+        console.log('[AuthContext.login] Parsed JSON Response Data:', data);
+      } else {
+        const rawText = await res.text();
+        console.warn(`[AuthContext.login] Expected JSON response but received content-type: "${contentType}". Raw text content:`, rawText);
+        data = { success: false, message: `Unexpected response layout: ${rawText.substring(0, 200)}` };
+      }
 
       if (data.success && data.token) {
+        console.log('[AuthContext.login] Login Succeeded. Setting token and user session.');
         try {
           localStorage.setItem('novel_threads_token', data.token);
         } catch (err) {
-          console.warn('localStorage write is blocked/denied in this environment. Falling back to in-memory auth state.', err);
+          console.warn('[AuthContext.login] localStorage write is blocked/denied in this environment. Falling back to in-memory auth state.', err);
         }
         setToken(data.token);
         setUser(data.user);
         return { success: true, message: data.message || 'Login successful' };
       } else {
+        console.warn('[AuthContext.login] Login Rejected by Server:', data.message || 'Invalid credentials');
         return { success: false, message: data.message || 'Invalid credentials' };
       }
     } catch (err: any) {
-      console.error('Login Error Context:', err);
-      return { success: false, message: 'Network error or backend is not active.' };
+      console.error('[AuthContext.login] CRITICAL FETCH FAIL OR INTERCEPT:', err);
+      return { success: false, message: `Network error or backend is not active. Details: ${err.message || err}` };
     }
   };
 

@@ -52,6 +52,15 @@ export const Diagnostics: React.FC = () => {
   const [selectedResultTab, setSelectedResultTab] = useState<string>('relative');
   const [activeInstructionTab, setActiveInstructionTab] = useState<'cors' | 'vite' | 'env'>('cors');
 
+  // New diagnostics manager states
+  const [users, setUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [loadingReset, setLoadingReset] = useState(false);
+
   // Helper inside component to format timing
   const addLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -211,9 +220,63 @@ export const Diagnostics: React.FC = () => {
     }
   };
 
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    addLog('Querying registered user directories from diagnostics portal...');
+    try {
+      const res = await fetch('/api/diagnostics/users');
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setUsers(data.users || []);
+        addLog(`Successfully loaded ${data.users?.length || 0} registered user(s) from database.`);
+      } else {
+        addLog(`🔴 Failed to load users from database: ${data.message || data.error}`);
+      }
+    } catch (err: any) {
+      addLog(`🔴 Error fetching users: ${err.message || err}`);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetMessage('');
+    setResetError('');
+    if (!resetEmail.trim() || !resetPassword.trim()) {
+      setResetError('Please specify email and new password.');
+      return;
+    }
+    setLoadingReset(true);
+    addLog(`Initiating admin/reader override command for email: "${resetEmail}"`);
+    try {
+      const res = await fetch('/api/diagnostics/reset-admin-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail.trim(), newPassword: resetPassword.trim() })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setResetMessage(data.message || 'Credentials updated successfully!');
+        addLog(`✅ Password reset completed successfully for "${resetEmail}".`);
+        setResetPassword('');
+        fetchUsers(); // Refresh database state view list
+      } else {
+        setResetError(data.message || data.error || 'Failed to update credentials.');
+        addLog(`🔴 Password override failed: ${data.message || data.error}`);
+      }
+    } catch (err: any) {
+      setResetError(err.message || String(err));
+      addLog(`🔴 Critical failure during password override fetch: ${err.message || err}`);
+    } finally {
+      setLoadingReset(false);
+    }
+  };
+
   // Run on first load automatically
   useEffect(() => {
     runDiagnostics();
+    fetchUsers();
   }, []);
 
   const copyToClipboard = (text: string) => {
@@ -535,6 +598,112 @@ export const Diagnostics: React.FC = () => {
           {/* Right panel cols (Troubleshooting Guidebook) */}
           <div className="lg:col-span-4 space-y-6">
             
+            {/* Database User Inspector card */}
+            <div className="bg-white border border-neutral-200 shadow-sm rounded-2xl overflow-hidden p-5">
+              <div className="flex items-center justify-between mb-3 pb-2 border-b border-neutral-100">
+                <h3 className="font-bold text-neutral-800 text-sm flex items-center gap-2">
+                  <Database className="w-4 h-4 text-orange-500" /> DB User Directories
+                </h3>
+                <button
+                  onClick={fetchUsers}
+                  disabled={loadingUsers}
+                  className="p-1 text-neutral-400 hover:text-orange-500 hover:bg-neutral-50 rounded transition-all cursor-pointer"
+                  title="Reload Accounts List"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingUsers ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+
+              {loadingUsers ? (
+                <div className="py-6 flex flex-col items-center justify-center gap-1.5 text-xs text-neutral-400">
+                  <span className="w-4 h-4 border-2 border-neutral-300 border-t-orange-500 animate-spin rounded-full"></span>
+                  <span>Fetching users...</span>
+                </div>
+              ) : users.length === 0 ? (
+                <div className="py-4 text-center text-xs text-neutral-400">
+                  No accounts found in dynamic records.
+                </div>
+              ) : (
+                <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+                  {users.map((u) => (
+                    <div 
+                      key={u._id} 
+                      onClick={() => setResetEmail(u.email)}
+                      className="p-2.5 rounded-xl border border-neutral-150/75 hover:bg-orange-50/20 hover:border-orange-200/50 transition-all cursor-pointer text-left relative group"
+                    >
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="text-xs font-bold text-neutral-700 truncate max-w-[130px]">{u.name || 'Unnamed'}</span>
+                        <span className={`px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase rounded ${
+                          u.role === 'ADMIN' ? 'bg-orange-100 text-orange-700' : 'bg-neutral-100 text-neutral-600'
+                        }`}>
+                          {u.role}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-neutral-400 font-mono mt-0.5 truncate select-all">{u.email}</p>
+                      <span className="absolute right-2.5 bottom-2.5 opacity-0 group-hover:opacity-100 text-[9px] text-orange-500 font-sans font-bold transition-opacity">
+                        Fill email
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Quick credentials override panel */}
+            <div className="bg-white border border-neutral-200 shadow-sm rounded-2xl overflow-hidden p-5">
+              <h3 className="font-bold text-neutral-800 text-sm mb-1 flex items-center gap-2">
+                <Lock className="w-4 h-4 text-orange-500" /> Account Password Override
+              </h3>
+              <p className="text-[11px] text-neutral-400 leading-relaxed mb-4">
+                Overwrite any account's password on MongoDB or offline stores. Click any user above to load their email.
+              </p>
+
+              <form onSubmit={handleResetPassword} className="space-y-3">
+                {resetMessage && (
+                  <div className="p-2.5 bg-emerald-50 text-emerald-800 text-xs rounded-lg border border-emerald-100 font-sans leading-relaxed">
+                    <strong>Success:</strong> {resetMessage}
+                  </div>
+                )}
+                {resetError && (
+                  <div className="p-2.5 bg-rose-50 text-rose-700 text-xs rounded-lg border border-rose-100 font-sans leading-relaxed">
+                    <strong>Failed:</strong> {resetError}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1 font-mono">Target Email</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. sirisettyvenkatesh@gmail.com"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-neutral-300 rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1 font-mono">New Password Override</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 123456"
+                    value={resetPassword}
+                    onChange={(e) => setResetPassword(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-neutral-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loadingReset}
+                  className="w-full py-2 bg-neutral-900 hover:bg-neutral-800 active:translate-y-0.5 text-white text-xs font-semibold rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {loadingReset ? 'Updating database records...' : 'Apply Password Override'}
+                </button>
+              </form>
+            </div>
+
             {/* Diagnosis analysis wizard */}
             <div className="bg-white border border-neutral-200 shadow-sm rounded-2xl overflow-hidden p-5">
               <h3 className="font-bold text-neutral-800 text-sm mb-3 flex items-center gap-2">

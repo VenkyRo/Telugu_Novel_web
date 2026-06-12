@@ -154,25 +154,36 @@ export const authController = {
     try {
       const { email, password } = req.body;
 
+      console.log(`[SERVER-AUTH] Login attempt received for email: "${email}" (password length: ${password ? password.length : 0})`);
+
       if (!email || !password) {
+        console.warn('[SERVER-AUTH] Login rejected: missing email or password.');
         return res.status(400).json({ success: false, message: 'Please enter your email and password.' });
       }
 
       const lowerEmail = email.toLowerCase().trim();
+      console.log(`[SERVER-AUTH] Finding user in database with normalized email: "${lowerEmail}"`);
 
       const user = await db.users.findOne({ email: lowerEmail });
       if (!user) {
+        console.warn(`[SERVER-AUTH] Login rejected: no user found with email matching "${lowerEmail}".`);
         return res.status(401).json({ success: false, message: 'Invalid email or password.' });
       }
 
+      console.log(`[SERVER-AUTH] User found: _id="${user._id}", role="${user.role}", name="${user.name}". Proceeding to password verification.`);
+
       // Check password
       const isMatch = await bcrypt.compare(password, user.password || '');
+      console.log(`[SERVER-AUTH] BCRYPT compare result: ${isMatch ? 'SUCCESS (MATCH)' : 'FAILURE (MISMATCH)'}`);
+      
       if (!isMatch) {
+        console.warn('[SERVER-AUTH] Login rejected: passwords do not match.');
         return res.status(401).json({ success: false, message: 'Invalid email or password.' });
       }
 
       // Check ban status
       if (user.isBanned) {
+        console.warn(`[SERVER-AUTH] Login rejected: user _id="${user._id}" is banned. Reason: "${user.banReason}"`);
         return res.status(403).json({
           success: false,
           isBanned: true,
@@ -181,6 +192,7 @@ export const authController = {
       }
 
       const token = generateToken(user._id);
+      console.log(`[SERVER-AUTH] Login successful! Token generated for user _id="${user._id}".`);
 
       return res.status(200).json({
         success: true,
@@ -194,7 +206,7 @@ export const authController = {
         }
       });
     } catch (error: any) {
-      console.error('Login Error:', error);
+      console.error('[SERVER-AUTH] Critical exception during login handling:', error);
       return res.status(500).json({ success: false, message: error.message || 'Server error occurred during login.' });
     }
   },

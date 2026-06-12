@@ -123,6 +123,55 @@ async function startServer() {
     });
   });
 
+  // --- PLAYGROUND DIAGNOSTICS HELPERS ---
+  app.get('/api/diagnostics/users', async (req: Request, res: Response) => {
+    try {
+      const { db } = await import('./server/db');
+      const users = await db.users.find();
+      const sanitized = users.map(u => ({
+        _id: u._id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        hasPassword: !!u.password
+      }));
+      res.status(200).json({ success: true, users: sanitized });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  app.post('/api/diagnostics/reset-admin-password', async (req: Request, res: Response) => {
+    try {
+      const { email, newPassword } = req.body;
+      const { db } = await import('./server/db');
+      const bcrypt = await import('bcryptjs');
+
+      if (!email || !newPassword) {
+        return res.status(400).json({ success: false, message: 'Missing parameters email or newPassword.' });
+      }
+
+      const lowerEmail = email.toLowerCase().trim();
+      const user = await db.users.findOne({ email: lowerEmail });
+      
+      if (!user) {
+        return res.status(404).json({ success: false, message: `User with email "${lowerEmail}" not found.` });
+      }
+
+      console.log(`[DIAGNOSTICS] Overriding password reset for user ID "${user._id}" email "${lowerEmail}".`);
+      const salt = await bcrypt.default.genSalt(10);
+      const hashedPassword = await bcrypt.default.hash(newPassword, salt);
+
+      await db.users.update(user._id, { password: hashedPassword });
+      console.log(`[DIAGNOSTICS] Successfully updated password hash for user "${lowerEmail}".`);
+
+      res.status(200).json({ success: true, message: `Successfully reset password for admin corresponding to "${lowerEmail}".` });
+    } catch (err: any) {
+      console.error('[DIAGNOSTICS] Failed to reset password:', err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   // --- PUBLIC ROUTES ---
   app.get('/api/novels', novelsController.getAllPublic);
   app.get('/api/novels/:slug', novelsController.getPublicBySlug);
